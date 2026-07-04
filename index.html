@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembuat QRIS Nominal Tetap</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <link rel="icon" href="icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="QRIS Dinamis">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QRIS Dinamis</h1>
+            <p>Ubah QRIS statis Anda menjadi QRIS dengan nominal tetap.</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <div class="input-group">
+                    <label for="qrisImage">1. Upload Gambar QRIS Anda</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="qrisImage" accept="image/*" />
+                        <div class="file-upload-design">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <p id="fileName">Pilih gambar QRIS atau seret ke sini</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="nominal">2. Masukkan Nominal (Rp)</label>
+                    <div class="input-wrapper">
+                        <span class="currency-symbol">Rp</span>
+                        <input type="number" id="nominal" placeholder="Contoh: 50000" min="1" step="1">
+                    </div>
+                </div>
+
+                <button id="generateBtn" disabled>Buat QRIS Baru</button>
+            </div>
+
+            <div class="result-section hidden" id="resultSection">
+                <h2>QRIS Berhasil Dibuat!</h2>
+                <p>Pembeli tidak bisa lagi mengubah nominal saat scan QR ini.</p>
+                
+                <div class="qr-container">
+                    <canvas id="qrCanvas"></canvas>
+                </div>
+                
+                <button id="downloadBtn" class="secondary-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download QRIS
+                </button>
+            </div>
+            
+            <div id="errorMsg" class="error-msg hidden"></div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 QRIS Dinamis Generator</p>
+        </footer>
+    </div>
+
+    <!-- Scripts for QR processing -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker terdaftar:', reg.scope))
+                    .catch(err => console.warn('Gagal daftar Service Worker:', err));
+            });
+        }
+    </script>
+</body>
+</html>
