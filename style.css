@@ -1,5 +1,5 @@
 :root {
-    --primary-color: #4F46E5; /* Indigo */
+    --primary-color: #4F46E5;
     --primary-hover: #4338CA;
     --bg-gradient-start: #EEF2FF;
     --bg-gradient-end: #E0E7FF;
@@ -11,7 +11,6 @@
     --success-color: #10B981;
 }
 
-/* Dark mode palette */
 :root[data-theme="dark"] {
     --primary-color: #6366F1;
     --primary-hover: #818CF8;
@@ -38,7 +37,6 @@ body {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
     padding: 20px;
     transition: background 0.3s ease, color 0.3s ease;
 }
@@ -49,6 +47,24 @@ body {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    margin: auto 0;
+    transition: max-width 0.3s ease;
+}
+
+@media (min-width: 900px) {
+    .container { max-width: 960px; }
+}
+
+/* Angka (nominal, saldo, statistik) pakai monospace, ala tampilan mesin kasir */
+.currency-symbol,
+#nominal,
+#feeInput,
+.chip,
+.breakdown-row span:last-child,
+.history-item-nominal,
+.stat-value,
+.result-total {
+    font-family: 'JetBrains Mono', monospace;
 }
 
 header {
@@ -88,6 +104,93 @@ header p {
 .theme-toggle:hover:not(:disabled) {
     transform: translateY(-1px);
     background: var(--card-bg);
+}
+
+/* Stepper */
+.stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.step-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.step-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.step.active .step-circle {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.step.active .step-label { color: var(--primary-color); }
+
+.step.completed .step-circle {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.step-line {
+    width: 32px;
+    height: 2px;
+    background: var(--border-color);
+    margin-bottom: 16px;
+}
+
+/* Workspace layout (2 kolom di layar lebar) */
+.workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+@media (min-width: 900px) {
+    .workspace {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .workspace .card,
+    .workspace .result-section {
+        flex: 1;
+        min-width: 0;
+    }
+    .workspace .result-section {
+        position: sticky;
+        top: 20px;
+    }
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .card {
@@ -313,15 +416,10 @@ header p {
     border-color: rgba(52, 211, 153, 0.4);
 }
 
-:root[data-theme="dark"] .merchant-name {
-    color: #6EE7B7;
-}
+:root[data-theme="dark"] .merchant-name { color: #6EE7B7; }
+:root[data-theme="dark"] .merchant-city { color: #34D399; }
 
-:root[data-theme="dark"] .merchant-city {
-    color: #34D399;
-}
-
-/* Nominal Input */
+/* Nominal & Fee Input */
 .input-wrapper {
     position: relative;
     display: flex;
@@ -348,6 +446,8 @@ input[type="text"] {
     color: var(--text-main);
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
+
+#noteInput { padding-left: 16px; }
 
 :root[data-theme="dark"] input[type="number"],
 :root[data-theme="dark"] input[type="text"] {
@@ -398,6 +498,126 @@ input[type="text"]:focus {
 
 :root[data-theme="dark"] .chip:hover:not(:disabled) {
     background: rgba(99, 102, 241, 0.25);
+}
+
+/* Fee Toggle Switch */
+.switch-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.switch-label input { display: none; }
+
+.switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: var(--border-color);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.switch-label input:checked + .switch {
+    background: var(--primary-color);
+}
+
+.switch-label input:checked + .switch::after {
+    transform: translateX(18px);
+}
+
+/* Fee Options */
+.fee-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    background: rgba(79, 70, 229, 0.05);
+    border: 1px solid rgba(79, 70, 229, 0.15);
+    border-radius: 12px;
+}
+
+.fee-type-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.fee-type-tab {
+    width: auto;
+    flex: 1;
+    padding: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: white;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.fee-type-tab.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.fee-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+:root[data-theme="dark"] .fee-options {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.25);
+}
+
+:root[data-theme="dark"] .fee-type-tab {
+    background: #1E293B;
+}
+
+/* Breakdown */
+.breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+}
+
+:root[data-theme="dark"] .breakdown {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.breakdown-total {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    padding-top: 6px;
+    border-top: 1px dashed var(--border-color);
 }
 
 /* Buttons */
@@ -479,7 +699,7 @@ button:disabled {
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     animation: fadeIn 0.5s ease-out forwards;
 }
 
@@ -491,6 +711,62 @@ button:disabled {
 .result-section p {
     font-size: 14px;
     color: var(--text-muted);
+}
+
+.result-total {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: -0.5px;
+}
+
+/* Success checkmark, "menggambar" saat QR baru jadi */
+.success-check {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+}
+
+.success-check svg {
+    width: 100%;
+    height: 100%;
+}
+
+.check-circle {
+    fill: none;
+    stroke: var(--success-color);
+    stroke-width: 3;
+    stroke-dasharray: 151;
+    stroke-dashoffset: 151;
+}
+
+.check-mark {
+    fill: none;
+    stroke: var(--success-color);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+}
+
+.success-check.play .check-circle {
+    animation: drawCircle 0.5s ease forwards;
+}
+
+.success-check.play .check-mark {
+    animation: drawCheck 0.3s 0.4s ease forwards;
+}
+
+@keyframes drawCircle { to { stroke-dashoffset: 0; } }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .success-check.play .check-circle,
+    .success-check.play .check-mark {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
 }
 
 .qr-container {
@@ -547,6 +823,37 @@ button:disabled {
     transition: background 0.3s ease;
 }
 
+.history-stats {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px 0;
+}
+
+.stat {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 10px;
+}
+
+:root[data-theme="dark"] .stat {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-family: 'Inter', sans-serif;
+}
+
 .history-toggle {
     width: 100%;
     background: transparent;
@@ -584,6 +891,22 @@ button:disabled {
     gap: 10px;
 }
 
+.history-export {
+    width: auto;
+    align-self: flex-end;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.history-export:hover:not(:disabled) {
+    background: rgba(79, 70, 229, 0.08);
+    transform: none;
+}
+
 .history-item {
     display: flex;
     justify-content: space-between;
@@ -606,12 +929,21 @@ button:disabled {
 .history-item-meta {
     font-size: 12px;
     color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+}
+
+.history-item-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-style: italic;
 }
 
 .history-item-btn {
     width: auto;
     padding: 6px 12px;
     font-size: 12px;
+    font-family: 'Inter', sans-serif;
 }
 
 .history-empty {
@@ -619,6 +951,7 @@ button:disabled {
     color: var(--text-muted);
     text-align: center;
     padding: 8px 0;
+    font-family: 'Inter', sans-serif;
 }
 
 .history-clear {
@@ -627,6 +960,7 @@ button:disabled {
     background: transparent;
     color: var(--error-color);
     font-size: 12px;
+    font-family: 'Inter', sans-serif;
     padding: 4px 8px;
     text-decoration: underline;
 }
@@ -646,6 +980,16 @@ footer {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Focus visibility (aksesibilitas) */
+button:focus-visible,
+input:focus-visible,
+.chip:focus-visible,
+.upload-tab:focus-visible,
+.fee-type-tab:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 /* Hide number input spinners */

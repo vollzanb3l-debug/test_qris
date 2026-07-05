@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qris-dinamis-v2';
+const CACHE_NAME = 'qris-dinamis-v3';
 
 // Aset inti aplikasi (file sendiri)
 const CORE_ASSETS = [
@@ -13,7 +13,7 @@ const CORE_ASSETS = [
 
 // Library dari CDN, ikut di-cache biar tetap jalan saat offline
 const CDN_ASSETS = [
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
   'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js'
 ];

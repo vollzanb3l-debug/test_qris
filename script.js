@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM References ---
     const qrisImageInput = document.getElementById('qrisImage');
-    const fileNameDisplay = document.getElementById('fileName');
     const fileNameCaption = document.getElementById('fileNameCaption');
     const fileUploadWrapper = document.getElementById('fileUploadWrapper');
     const fileUploadDesign = document.getElementById('fileUploadDesign');
@@ -12,10 +11,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraCloseBtn = document.getElementById('cameraCloseBtn');
     const nominalInput = document.getElementById('nominal');
     const chipRow = document.getElementById('chipRow');
+    const feeToggle = document.getElementById('feeToggle');
+    const feeOptions = document.getElementById('feeOptions');
+    const feeTypeTabs = document.querySelectorAll('.fee-type-tab');
+    const feeInput = document.getElementById('feeInput');
+    const feeSymbol = document.getElementById('feeSymbol');
+    const breakdown = document.getElementById('breakdown');
+    const breakdownSubtotal = document.getElementById('breakdownSubtotal');
+    const breakdownFeeRow = document.getElementById('breakdownFeeRow');
+    const breakdownFee = document.getElementById('breakdownFee');
+    const breakdownTotal = document.getElementById('breakdownTotal');
+    const noteInput = document.getElementById('noteInput');
     const generateBtn = document.getElementById('generateBtn');
     const btnLabel = generateBtn.querySelector('.btn-label');
     const btnSpinner = document.getElementById('btnSpinner');
     const resultSection = document.getElementById('resultSection');
+    const resultTotal = document.getElementById('resultTotal');
+    const successCheck = document.querySelector('.success-check');
     const errorMsg = document.getElementById('errorMsg');
     const qrCanvas = document.getElementById('qrCanvas');
     const downloadBtn = document.getElementById('downloadBtn');
@@ -30,12 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyToggle = document.getElementById('historyToggle');
     const historyList = document.getElementById('historyList');
     const historyEmpty = document.getElementById('historyEmpty');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const statCountToday = document.getElementById('statCountToday');
+    const statTotalToday = document.getElementById('statTotalToday');
 
     let originalQRISPayload = '';
+    let feeType = 'fixed';
+    let currentTransaction = { subtotal: 0, fee: 0, total: 0 };
     let cameraStream = null;
     let cameraRAF = null;
     const hiddenCanvas = document.createElement('canvas');
     const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const THEME_KEY = 'qris-theme';
     const HISTORY_KEY = 'qris-history';
@@ -64,6 +82,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initTheme();
+
+    // =====================================================
+    // STEPPER
+    // =====================================================
+    function updateStepper(activeStep) {
+        document.querySelectorAll('.step').forEach((stepEl) => {
+            const num = parseInt(stepEl.dataset.step, 10);
+            stepEl.classList.remove('active', 'completed');
+            if (num < activeStep) stepEl.classList.add('completed');
+            else if (num === activeStep) stepEl.classList.add('active');
+        });
+    }
 
     // =====================================================
     // UPLOAD MODE TABS (UPLOAD vs KAMERA)
@@ -100,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         generateBtn.disabled = true;
         merchantInfo.classList.add('hidden');
         resultSection.classList.add('hidden');
+        updateStepper(1);
 
         const reader = new FileReader();
         reader.onload = function (event) {
@@ -124,7 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (code.data.startsWith('000201')) {
                         originalQRISPayload = code.data;
                         showMerchantInfo(code.data);
-                        checkFormValidity();
+                        computeBreakdown();
+                        updateStepper(2);
                     } else {
                         showError('QR Code tidak valid. Pastikan itu adalah QRIS.');
                     }
@@ -207,7 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (code && code.data.startsWith('000201')) {
                 originalQRISPayload = code.data;
                 showMerchantInfo(code.data);
-                checkFormValidity();
+                computeBreakdown();
+                updateStepper(2);
                 hideError();
                 fileNameCaption.textContent = 'QRIS berhasil dipindai dari kamera';
                 fileNameCaption.classList.remove('hidden');
@@ -242,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const raw = getRawNominal();
         nominalInput.value = formatNominalDisplay(raw);
         updateChipActiveState(raw);
-        checkFormValidity();
+        computeBreakdown();
     });
 
     chipRow.querySelectorAll('.chip').forEach((chip) => {
@@ -250,9 +283,76 @@ document.addEventListener('DOMContentLoaded', () => {
             const raw = parseInt(chip.dataset.value, 10);
             nominalInput.value = formatNominalDisplay(raw);
             updateChipActiveState(raw);
-            checkFormValidity();
+            computeBreakdown();
         });
     });
+
+    // =====================================================
+    // BIAYA TAMBAHAN (ADMIN / SERVICE FEE)
+    // =====================================================
+    function getFeeRawValue() {
+        if (feeType === 'fixed') {
+            return parseInt(feeInput.value.replace(/\D/g, ''), 10) || 0;
+        }
+        return parseFloat(feeInput.value) || 0;
+    }
+
+    function formatFeeInputValue() {
+        if (feeType === 'fixed') {
+            const raw = parseInt(feeInput.value.replace(/\D/g, ''), 10) || 0;
+            feeInput.value = raw ? raw.toLocaleString('id-ID') : '';
+        } else {
+            let val = feeInput.value.replace(/[^0-9.]/g, '');
+            const parts = val.split('.');
+            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+            feeInput.value = val;
+        }
+        computeBreakdown();
+    }
+
+    feeInput.addEventListener('input', formatFeeInputValue);
+
+    feeToggle.addEventListener('change', () => {
+        feeOptions.classList.toggle('hidden', !feeToggle.checked);
+        if (!feeToggle.checked) feeInput.value = '';
+        computeBreakdown();
+    });
+
+    feeTypeTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            feeType = tab.dataset.feeType;
+            feeTypeTabs.forEach((t) => t.classList.toggle('active', t === tab));
+            feeSymbol.textContent = feeType === 'fixed' ? 'Rp' : '%';
+            feeInput.value = '';
+            computeBreakdown();
+        });
+    });
+
+    // =====================================================
+    // BREAKDOWN (SUBTOTAL + BIAYA = TOTAL)
+    // =====================================================
+    function computeBreakdown() {
+        const subtotal = getRawNominal();
+        let fee = 0;
+        if (feeToggle.checked) {
+            const feeRaw = getFeeRawValue();
+            fee = feeType === 'fixed' ? feeRaw : Math.round(subtotal * feeRaw / 100);
+        }
+        const total = subtotal + fee;
+
+        if (subtotal > 0) {
+            breakdown.classList.remove('hidden');
+            breakdownSubtotal.textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
+            breakdownFeeRow.classList.toggle('hidden', fee <= 0);
+            breakdownFee.textContent = `Rp ${fee.toLocaleString('id-ID')}`;
+            breakdownTotal.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+        } else {
+            breakdown.classList.add('hidden');
+        }
+
+        checkFormValidity();
+        return { subtotal, fee, total };
+    }
 
     // =====================================================
     // VALIDASI FORM
@@ -263,6 +363,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkFormValidity() {
         generateBtn.disabled = !isFormValid();
+    }
+
+    // =====================================================
+    // ANIMASI HITUNG NAIK (ALA TOTAL DI KASIR)
+    // =====================================================
+    function animateCountUp(el, target, duration = 600) {
+        if (prefersReducedMotion || target === 0) {
+            el.textContent = `Rp ${target.toLocaleString('id-ID')}`;
+            return;
+        }
+        const start = performance.now();
+        function step(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(target * eased);
+            el.textContent = `Rp ${current.toLocaleString('id-ID')}`;
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = `Rp ${target.toLocaleString('id-ID')}`;
+        }
+        requestAnimationFrame(step);
+    }
+
+    function playSuccessAnimation() {
+        successCheck.classList.remove('play');
+        void successCheck.offsetWidth; // force reflow supaya animasi bisa diulang
+        successCheck.classList.add('play');
     }
 
     // =====================================================
@@ -277,8 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
     generateBtn.addEventListener('click', () => {
         try {
             setGenerating(true);
-            const nominal = getRawNominal();
-            const newPayload = createDynamicQRIS(originalQRISPayload, nominal);
+            const { subtotal, fee, total } = computeBreakdown();
+            const newPayload = createDynamicQRIS(originalQRISPayload, total);
 
             QRCode.toCanvas(qrCanvas, newPayload, {
                 width: 300,
@@ -293,9 +419,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     showError('Gagal membuat gambar QR Code baru.');
                     console.error(error);
                 } else {
+                    currentTransaction = { subtotal, fee, total };
                     resultSection.classList.remove('hidden');
+                    animateCountUp(resultTotal, total);
+                    playSuccessAnimation();
+                    updateStepper(3);
                     resultSection.scrollIntoView({ behavior: 'smooth' });
-                    saveToHistory(nominal, newPayload);
+
+                    const note = noteInput.value.trim();
+                    saveToHistory({ subtotal, fee, total, payload: newPayload, note });
+                    noteInput.value = '';
                 }
             });
         } catch (error) {
@@ -310,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadBtn.addEventListener('click', () => {
         const image = qrCanvas.toDataURL('image/png');
         const link = document.createElement('a');
-        link.download = `QRIS_${getRawNominal()}.png`;
+        link.download = `QRIS_${currentTransaction.total}.png`;
         link.href = image;
         link.click();
     });
@@ -318,13 +451,13 @@ document.addEventListener('DOMContentLoaded', () => {
     shareBtn.addEventListener('click', async () => {
         try {
             const blob = await new Promise((resolve) => qrCanvas.toBlob(resolve, 'image/png'));
-            const file = new File([blob], `QRIS_${getRawNominal()}.png`, { type: 'image/png' });
+            const file = new File([blob], `QRIS_${currentTransaction.total}.png`, { type: 'image/png' });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
                     files: [file],
                     title: 'QRIS Pembayaran',
-                    text: `QRIS pembayaran sebesar Rp ${nominalInput.value}`
+                    text: `QRIS pembayaran sebesar Rp ${currentTransaction.total.toLocaleString('id-ID')}`
                 });
             } else {
                 showError('Perangkat/browser ini belum mendukung fitur bagikan langsung. Silakan gunakan tombol Download, lalu kirim manual.');
@@ -339,11 +472,19 @@ document.addEventListener('DOMContentLoaded', () => {
     printBtn.addEventListener('click', () => {
         const dataUrl = qrCanvas.toDataURL('image/png');
         const info = extractMerchantInfo(originalQRISPayload);
+        const { subtotal, fee, total } = currentTransaction;
+
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
             showError('Gagal membuka jendela cetak. Pastikan pop-up tidak diblokir browser.');
             return;
         }
+
+        const feeLines = fee > 0
+            ? `<p class="line">Subtotal: Rp ${subtotal.toLocaleString('id-ID')}</p>
+               <p class="line">Biaya Admin: Rp ${fee.toLocaleString('id-ID')}</p>`
+            : '';
+
         printWindow.document.write(`
             <!DOCTYPE html>
             <html lang="id">
@@ -355,6 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     img { width: 300px; height: 300px; margin: 16px auto; display: block; }
                     h2 { margin-bottom: 4px; }
                     p.city { color: #555; margin-top: 0; }
+                    p.line { color: #555; margin: 2px 0; font-size: 14px; }
                     .nominal { font-size: 24px; font-weight: bold; margin-top: 12px; }
                 </style>
             </head>
@@ -362,7 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h2>${escapeHtml(info.name || 'QRIS Pembayaran')}</h2>
                 <p class="city">${escapeHtml(info.city || '')}</p>
                 <img src="${dataUrl}" alt="QRIS">
-                <div class="nominal">Rp ${nominalInput.value}</div>
+                ${feeLines}
+                <div class="nominal">Total: Rp ${total.toLocaleString('id-ID')}</div>
                 <script>
                     window.onload = function () { window.print(); };
                 <\/script>
@@ -389,18 +532,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function saveToHistory(nominal, payload) {
+    // Ambil total & subtotal dengan aman, termasuk untuk entri riwayat versi lama
+    // (sebelum fitur biaya tambahan ada) yang cuma punya field "nominal".
+    function normalizeEntry(entry) {
+        return {
+            subtotal: entry.subtotal ?? entry.nominal ?? 0,
+            fee: entry.fee ?? 0,
+            total: entry.total ?? entry.nominal ?? 0,
+            note: entry.note || '',
+            merchantName: entry.merchantName || 'QRIS',
+            merchantCity: entry.merchantCity || '',
+            timestamp: entry.timestamp,
+            payload: entry.payload
+        };
+    }
+
+    function saveToHistory({ subtotal, fee, total, payload, note }) {
         const history = loadHistory();
         const info = extractMerchantInfo(originalQRISPayload);
         history.unshift({
-            nominal,
+            subtotal,
+            fee,
+            total,
             payload,
+            note,
             merchantName: info.name || 'QRIS',
             merchantCity: info.city || '',
             timestamp: Date.now()
         });
         localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, HISTORY_LIMIT)));
         renderHistory();
+        renderStats();
     }
 
     function formatRelativeDate(ts) {
@@ -417,6 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderHistory() {
         const history = loadHistory();
         historyList.innerHTML = '';
+        historyList.appendChild(exportCsvBtn);
 
         if (history.length === 0) {
             historyList.appendChild(historyEmpty);
@@ -424,7 +587,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        history.forEach((entry, idx) => {
+        history.forEach((rawEntry) => {
+            const entry = normalizeEntry(rawEntry);
             const item = document.createElement('div');
             item.className = 'history-item';
 
@@ -433,15 +597,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const nominalP = document.createElement('p');
             nominalP.className = 'history-item-nominal';
-            nominalP.textContent = `Rp ${Number(entry.nominal).toLocaleString('id-ID')}`;
+            nominalP.textContent = `Rp ${entry.total.toLocaleString('id-ID')}`;
 
             const metaP = document.createElement('p');
             metaP.className = 'history-item-meta';
             const cityPart = entry.merchantCity ? ` · ${entry.merchantCity}` : '';
-            metaP.textContent = `${entry.merchantName}${cityPart} — ${formatRelativeDate(entry.timestamp)}`;
+            const feePart = entry.fee > 0 ? ` (termasuk biaya Rp ${entry.fee.toLocaleString('id-ID')})` : '';
+            metaP.textContent = `${entry.merchantName}${cityPart} — ${formatRelativeDate(entry.timestamp)}${feePart}`;
 
             infoDiv.appendChild(nominalP);
             infoDiv.appendChild(metaP);
+
+            if (entry.note) {
+                const noteP = document.createElement('p');
+                noteP.className = 'history-item-note';
+                noteP.textContent = `"${entry.note}"`;
+                infoDiv.appendChild(noteP);
+            }
 
             const viewBtn = document.createElement('button');
             viewBtn.type = 'button';
@@ -454,8 +626,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     color: { dark: '#000000', light: '#ffffff' }
                 }, (err) => {
                     if (!err) {
-                        nominalInput.value = formatNominalDisplay(entry.nominal);
+                        currentTransaction = { subtotal: entry.subtotal, fee: entry.fee, total: entry.total };
+                        nominalInput.value = formatNominalDisplay(entry.subtotal);
                         resultSection.classList.remove('hidden');
+                        animateCountUp(resultTotal, entry.total);
+                        playSuccessAnimation();
+                        updateStepper(3);
                         resultSection.scrollIntoView({ behavior: 'smooth' });
                     }
                 });
@@ -473,8 +649,24 @@ document.addEventListener('DOMContentLoaded', () => {
         clearBtn.addEventListener('click', () => {
             localStorage.removeItem(HISTORY_KEY);
             renderHistory();
+            renderStats();
         });
         historyList.appendChild(clearBtn);
+    }
+
+    function renderStats() {
+        const history = loadHistory();
+        const today = new Date();
+        const isToday = (ts) => {
+            const d = new Date(ts);
+            return d.getFullYear() === today.getFullYear()
+                && d.getMonth() === today.getMonth()
+                && d.getDate() === today.getDate();
+        };
+        const todaysEntries = history.filter((e) => isToday(e.timestamp)).map(normalizeEntry);
+        const totalToday = todaysEntries.reduce((sum, e) => sum + e.total, 0);
+        statCountToday.textContent = todaysEntries.length;
+        statTotalToday.textContent = `Rp ${totalToday.toLocaleString('id-ID')}`;
     }
 
     historyToggle.addEventListener('click', () => {
@@ -482,7 +674,48 @@ document.addEventListener('DOMContentLoaded', () => {
         historyToggle.classList.toggle('open');
     });
 
+    function csvEscape(value) {
+        const str = String(value);
+        if (/[",\n]/.test(str)) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    }
+
+    exportCsvBtn.addEventListener('click', () => {
+        const history = loadHistory();
+        if (history.length === 0) {
+            showError('Belum ada riwayat untuk diexport.');
+            return;
+        }
+        const header = ['Tanggal', 'Waktu', 'Merchant', 'Kota', 'Catatan', 'Subtotal', 'Biaya Admin', 'Total'];
+        const rows = history.map((rawEntry) => {
+            const entry = normalizeEntry(rawEntry);
+            const date = new Date(entry.timestamp);
+            return [
+                date.toLocaleDateString('id-ID'),
+                date.toLocaleTimeString('id-ID'),
+                entry.merchantName,
+                entry.merchantCity,
+                entry.note,
+                entry.subtotal,
+                entry.fee,
+                entry.total
+            ];
+        });
+        const csvContent = [header, ...rows].map((row) => row.map(csvEscape).join(',')).join('\r\n');
+        // \uFEFF (BOM) ditambahkan agar Excel membaca karakter Indonesia dengan benar
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `riwayat-qris-${Date.now()}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    });
+
     renderHistory();
+    renderStats();
 
     // =====================================================
     // ERROR HELPERS
@@ -501,8 +734,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // CORE LOGIC — MODIFIKASI QRIS (TLV / EMV QR PARSER)
     // =====================================================
 
-    // Parse payload EMV QR (QRIS) menjadi daftar tag terstruktur { tag, value }.
-    // Urutan tag di payload asli dipertahankan.
     function parseTLV(payload) {
         const tags = [];
         let i = 0;
@@ -516,7 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return tags;
     }
 
-    // Susun ulang daftar tag menjadi satu string payload EMV QR.
     function buildTLV(tags) {
         return tags
             .map(({ tag, value }) => {
@@ -526,7 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .join('');
     }
 
-    // Ambil nama & kota merchant dari payload QRIS (Tag 59 & 60), untuk ditampilkan ke user.
     function extractMerchantInfo(payload) {
         if (!payload) return { name: null, city: null };
         try {
@@ -554,17 +783,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createDynamicQRIS(payload, nominal) {
-        // Step 1: Parse seluruh payload jadi daftar tag terstruktur (termasuk tag 63/CRC lama).
         let tags = parseTLV(payload);
-
-        // Step 2: Buang tag 54 (nominal lama) dan tag 63 (CRC lama, akan dihitung ulang).
         tags = tags.filter((t) => t.tag !== '54' && t.tag !== '63');
-
-        // Step 3: Ubah Point of Initiation Method (Tag 01) dari 11 (statis) ke 12 (dinamis).
         tags = tags.map((t) => (t.tag === '01' ? { ...t, value: '12' } : t));
 
-        // Step 4: Sisipkan Tag 54 (nominal baru) tepat setelah Tag 53 (Transaction Currency),
-        // sesuai urutan standar EMVCo. Kalau Tag 53 tidak ditemukan, taruh di akhir sebagai fallback.
         const nominalStr = nominal.toString();
         const tag54 = { tag: '54', value: nominalStr };
         const idx53 = tags.findIndex((t) => t.tag === '53');
@@ -574,15 +796,11 @@ document.addEventListener('DOMContentLoaded', () => {
             tags.push(tag54);
         }
 
-        // Step 5: Susun ulang jadi string, tambahkan header Tag 63 (6304) untuk dihitung CRC-nya.
         const payloadWithoutCRC = buildTLV(tags) + '6304';
-
-        // Step 6: Hitung CRC16 dan gabungkan jadi payload final.
         const crcValue = calculateCRC16(payloadWithoutCRC);
         return payloadWithoutCRC + crcValue;
     }
 
-    // CRC-16/CCITT-FALSE calculation
     function calculateCRC16(str) {
         let crc = 0xFFFF;
         for (let i = 0; i < str.length; i++) {
