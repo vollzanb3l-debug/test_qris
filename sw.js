@@ -1,9 +1,12 @@
-const CACHE_NAME = 'qris-dinamis-v3';
+const CACHE_NAME = 'qris-dinamis-v4';
 
 // Aset inti aplikasi (file sendiri)
 const CORE_ASSETS = [
   './',
   './index.html',
+  './home.css',
+  './home.js',
+  './qris.html',
   './style.css',
   './script.js',
   './manifest.json',

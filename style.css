@@ -84,6 +84,28 @@ header p {
     color: var(--text-muted);
 }
 
+.back-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.back-btn:hover {
+    transform: translateY(-1px);
+}
+
 .theme-toggle {
     position: absolute;
     top: 0;

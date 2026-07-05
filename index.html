@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembuat QRIS Nominal Tetap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Kotak Alat</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -12,10 +12,11 @@
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="QRIS Dinamis">
+    <meta name="apple-mobile-web-app-title" content="Kotak Alat">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home.css">
 </head>
 <body>
     <div class="container">
@@ -24,188 +25,44 @@
                 <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 <svg class="icon-sun hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
             </button>
-            <h1>QRIS Dinamis</h1>
-            <p>Ubah QRIS statis Anda menjadi QRIS dengan nominal tetap.</p>
+            <h1>Kotak Alat</h1>
+            <p>Pilih tools yang mau dipakai.</p>
         </header>
 
-        <div class="stepper" id="stepper">
-            <div class="step active" data-step="1">
-                <div class="step-circle">1</div>
-                <span class="step-label">QRIS</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step" data-step="2">
-                <div class="step-circle">2</div>
-                <span class="step-label">Nominal</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step" data-step="3">
-                <div class="step-circle">3</div>
-                <span class="step-label">Selesai</span>
-            </div>
-        </div>
-
         <main>
-            <div class="workspace" id="workspace">
-                <div class="card">
-                    <div class="input-group">
-                        <label>1. Ambil Gambar QRIS Anda</label>
+            <div class="card launcher-card">
+                <div class="stage" id="stage">
+                    <button type="button" class="nav-arrow nav-arrow-left" id="prevBtn" aria-label="Tool sebelumnya">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
 
-                        <div class="upload-tabs">
-                            <button type="button" class="upload-tab active" data-mode="upload">Upload Gambar</button>
-                            <button type="button" class="upload-tab" data-mode="camera">Scan Kamera</button>
-                        </div>
+                    <div class="track" id="track"></div>
 
-                        <div class="file-upload-wrapper" id="fileUploadWrapper">
-                            <input type="file" id="qrisImage" accept="image/*" />
-                            <div class="file-upload-design" id="fileUploadDesign">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                <p id="fileName">Pilih gambar QRIS atau seret ke sini</p>
-                            </div>
-                            <img id="previewThumb" class="preview-thumb hidden" alt="Preview QRIS" />
-                        </div>
-                        <p class="file-name-caption hidden" id="fileNameCaption"></p>
-
-                        <div class="camera-wrapper hidden" id="cameraWrapper">
-                            <video id="cameraVideo" playsinline autoplay muted></video>
-                            <div class="camera-frame"></div>
-                            <button type="button" id="cameraCloseBtn" class="camera-close">Tutup Kamera</button>
-                        </div>
-                    </div>
-
-                    <div class="merchant-info hidden" id="merchantInfo">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        <div class="merchant-info-text">
-                            <p class="merchant-name" id="merchantName">-</p>
-                            <p class="merchant-city" id="merchantCity">-</p>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="nominal">2. Masukkan Nominal (Rp)</label>
-                        <div class="input-wrapper">
-                            <span class="currency-symbol">Rp</span>
-                            <input type="text" inputmode="numeric" id="nominal" placeholder="Contoh: 50.000" maxlength="13">
-                        </div>
-                        <div class="chip-row" id="chipRow">
-                            <button type="button" class="chip" data-value="10000">10rb</button>
-                            <button type="button" class="chip" data-value="20000">20rb</button>
-                            <button type="button" class="chip" data-value="50000">50rb</button>
-                            <button type="button" class="chip" data-value="100000">100rb</button>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label class="switch-label" for="feeToggle">
-                            <input type="checkbox" id="feeToggle">
-                            <span class="switch"></span>
-                            <span>Tambahkan biaya admin/layanan</span>
-                        </label>
-
-                        <div class="fee-options hidden" id="feeOptions">
-                            <div class="fee-type-tabs">
-                                <button type="button" class="fee-type-tab active" data-fee-type="fixed">Nominal Tetap</button>
-                                <button type="button" class="fee-type-tab" data-fee-type="percent">Persentase</button>
-                            </div>
-                            <div class="input-wrapper">
-                                <span class="currency-symbol" id="feeSymbol">Rp</span>
-                                <input type="text" inputmode="decimal" id="feeInput" placeholder="Contoh: 1.000">
-                            </div>
-                            <p class="fee-hint">Pastikan menambahkan biaya ke pembeli sesuai ketentuan penyelenggara QRIS kamu.</p>
-                        </div>
-                    </div>
-
-                    <div class="breakdown hidden" id="breakdown">
-                        <div class="breakdown-row">
-                            <span>Subtotal</span>
-                            <span id="breakdownSubtotal">Rp 0</span>
-                        </div>
-                        <div class="breakdown-row hidden" id="breakdownFeeRow">
-                            <span>Biaya Admin</span>
-                            <span id="breakdownFee">Rp 0</span>
-                        </div>
-                        <div class="breakdown-row breakdown-total">
-                            <span>Total Dibayar</span>
-                            <span id="breakdownTotal">Rp 0</span>
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="noteInput">Catatan (opsional)</label>
-                        <input type="text" id="noteInput" placeholder="Misal: nama pembeli / no. meja">
-                    </div>
-
-                    <button id="generateBtn" disabled>
-                        <span class="btn-label">Buat QRIS Baru</span>
-                        <span class="btn-spinner hidden" id="btnSpinner"></span>
+                    <button type="button" class="nav-arrow nav-arrow-right" id="nextBtn" aria-label="Tool berikutnya">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </button>
                 </div>
 
-                <div class="result-section hidden" id="resultSection">
-                    <div class="success-check">
-                        <svg viewBox="0 0 52 52">
-                            <circle class="check-circle" cx="26" cy="26" r="24"></circle>
-                            <path class="check-mark" d="M14 27l7 7 16-16"></path>
-                        </svg>
-                    </div>
-                    <h2>QRIS Berhasil Dibuat!</h2>
-                    <div class="result-total" id="resultTotal">Rp 0</div>
-                    <p>Pembeli tidak bisa lagi mengubah nominal saat scan QR ini.</p>
-
-                    <div class="qr-container">
-                        <canvas id="qrCanvas"></canvas>
-                    </div>
-
-                    <div class="result-actions">
-                        <button id="downloadBtn" class="secondary-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            Download
-                        </button>
-                        <button id="shareBtn" class="secondary-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                            Bagikan
-                        </button>
-                        <button id="printBtn" class="secondary-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                            Cetak
-                        </button>
-                    </div>
+                <div class="tool-info">
+                    <h2 id="toolName">-</h2>
+                    <p id="toolDesc">-</p>
                 </div>
-            </div>
 
-            <div class="history-section">
-                <div class="history-stats">
-                    <div class="stat">
-                        <p class="stat-value" id="statCountToday">0</p>
-                        <p class="stat-label">Transaksi Hari Ini</p>
-                    </div>
-                    <div class="stat">
-                        <p class="stat-value" id="statTotalToday">Rp 0</p>
-                        <p class="stat-label">Total Hari Ini</p>
-                    </div>
-                </div>
-                <button type="button" id="historyToggle" class="history-toggle">
-                    <span>Riwayat QRIS</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <div class="dots" id="dots"></div>
+
+                <button type="button" id="openBtn">
+                    <span>Buka</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
-                <div class="history-list hidden" id="historyList">
-                    <button type="button" id="exportCsvBtn" class="history-export">Export ke CSV</button>
-                    <p class="history-empty" id="historyEmpty">Belum ada riwayat.</p>
-                </div>
             </div>
-
-            <div id="errorMsg" class="error-msg hidden"></div>
         </main>
 
         <footer>
-            <p>&copy; 2026 QRIS Dinamis Generator</p>
+            <p>&copy; 2026 Kotak Alat</p>
         </footer>
     </div>
 
-    <!-- Scripts for QR processing -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-    <script src="script.js"></script>
+    <script src="home.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
